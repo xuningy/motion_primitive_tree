@@ -1,0 +1,11 @@
+.DS_Store
+*~
+*.pyc
+*.o
+*.so
+*.dylib
+_*.py
+*.swp
+
+*.bag
+**/not_used/**

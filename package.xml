@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<package>
+  <name>motion_primitive_tree</name>
+  <version>0.0.0</version>
+  <description>The motion_primitive_tree package</description>
+
+  <maintainer email="xuningy@andrew.cmu.edu">Xuning Yang</maintainer>
+
+  <license>TODO</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>codetimer_catkin</build_depend>
+  <build_depend>cpp_utils</build_depend>
+  <build_depend>ros_utils</build_depend>
+  <build_depend>collision_checker</build_depend>
+  <build_depend>dynamic_reconfigure</build_depend>
+  <build_depend>forward_arc_primitives</build_depend>
+  <build_depend>roscpp</build_depend>
+  <build_depend>trajectory_utils</build_depend>
+
+  <run_depend>codetimer_catkin</run_depend>
+  <run_depend>cpp_utils</run_depend>
+  <run_depend>ros_utils</run_depend>
+  <run_depend>collision_checker</run_depend>
+  <run_depend>dynamic_reconfigure</run_depend>
+  <run_depend>forward_arc_primitives</run_depend>
+  <run_depend>roscpp</run_depend>
+  <run_depend>trajectory_utils</run_depend>
+
+</package>

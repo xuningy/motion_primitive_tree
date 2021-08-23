@@ -174,14 +174,6 @@ private:
   std::vector<int> leaf_trajectories_generated_;
 
   bool record_ = false;
-  std::ofstream tree_file_;
-  std::ofstream pos_file_;
-  std::ofstream vel_file_;
-  std::ofstream acc_file_;
-  std::ofstream jerk_file_;
-
-  void WriteAllTrajToFile(const std::vector<Trajectory>& trajectories);
-  void WriteAllTrajToFile(const Trajectory& trajectory);
 
   void costFunctionWeightReconfigureCallback(motion_primitive_tree::CostFunctionWeightsConfig &cfg, uint32_t levels);
 };

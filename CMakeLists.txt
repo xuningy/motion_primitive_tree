@@ -4,7 +4,6 @@ project(motion_primitive_tree)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -g")
 
 find_package(catkin REQUIRED COMPONENTS
-		codetimer_catkin
 		cpp_utils
 		ros_utils
 		collision_checker
@@ -24,7 +23,6 @@ catkin_package(
     INCLUDE_DIRS include ${EIGEN3_INCLUDE_DIRS}
     LIBRARIES ${PROJECT_NAME}
     CATKIN_DEPENDS
-			codetimer_catkin
 			cpp_utils
 			ros_utils
 			collision_checker

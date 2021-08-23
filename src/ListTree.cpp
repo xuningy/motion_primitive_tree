@@ -39,89 +39,6 @@ MotionPrimitiveListTree::MotionPrimitiveListTree() {
 }
 
 MotionPrimitiveListTree::~MotionPrimitiveListTree() {
-
-  if (!tree_initialized_) return;
-
-  // publish some debug results at kill time.
-  std::cout << "===Summary of MotionPrimitiveListTree===" << std::endl;
-  std::cout << "Number of trees created: " << num_trees_created_ << std::endl;
-
-  int stddev_iter;
-  int avg_iter = stats::Average(iter_, &stddev_iter);
-  std::cout << "Average number of iter per tree: " << avg_iter << " +- " << stddev_iter << std::endl;
-
-  int stddev_all_trajectories_generated;
-  int avg_all_trajectories_generated = stats::Average(all_trajectories_generated_, &stddev_all_trajectories_generated);
-  std::cout << "Average num of trajectories per tree: " << avg_all_trajectories_generated << " +- " << stddev_all_trajectories_generated << std::endl;
-
-  int stddev_nodes_added;
-  int avg_nodes_added = stats::Average(nodes_added_, &stddev_nodes_added);
-  std::cout << "Average num of nodes ADDED per tree: " << avg_nodes_added << " +- " << stddev_nodes_added << std::endl;
-
-  int stddev_nodes_rejected;
-  int avg_nodes_rejected = stats::Average(nodes_rejected_, &stddev_nodes_rejected);
-  std::cout << "Average num of nodes REJECTED per tree: " << avg_nodes_rejected << " +- " << stddev_nodes_rejected << std::endl;
-
-  int stddev_num_nodes_processed;
-  int avg_num_nodes_processed = stats::Average(num_nodes_processed_, &stddev_num_nodes_processed);
-  std::cout << "Average num of nodes PROCESSED per tree: " << avg_num_nodes_processed << " +- " << stddev_num_nodes_processed << std::endl;
-
-  int stddev_depth;
-  int avg_depth = stats::Average(depth_of_tree_, &stddev_depth);
-  std::cout << "Average max depth of tree: " << avg_depth << " +- " << stddev_depth << std::endl;
-
-  float stddev_mincost;
-  float avg_mincost = stats::Average(min_cost_, &stddev_mincost);
-  float max_mincost = vu::Max(min_cost_);
-  std::cout << "Average min cost: " << avg_mincost << " +- " << stddev_mincost <<" Max: " << max_mincost << std::endl;
-
-  float stddev_dist_to_goal;
-  float avg_dist_to_goal = 0.0;
-  float max_dist_to_goal = 0.0;
-  if (w_goal_ != 0)
-  {
-    avg_dist_to_goal = stats::Average(dist_to_goal_, &stddev_dist_to_goal);
-    max_dist_to_goal = vu::Max(dist_to_goal_);
-    std::cout << "Average dist to goal: " << avg_dist_to_goal << " +- " << stddev_dist_to_goal <<" Max: " << max_dist_to_goal << std::endl;
-  }
-
-  float stddev_jerk;
-  float avg_jerk = stats::Average(jerk_integral_, &stddev_jerk);
-  float max_jerk = vu::Max(jerk_integral_);
-  std::cout << "Average jerk integral: " << avg_jerk << " +- " << stddev_jerk <<" Max: " << max_jerk << std::endl;
-
-  if (record_) {
-    tree_file_ << "Name, Avg, Stddev, Min, Max" << std::endl;
-
-    tree_file_<< "Number of trees created," << num_trees_created_ << ",NaN, NaN,NaN"<< std::endl;
-
-    tree_file_ << "Num. of iter per tree," << avg_iter << "," << stddev_iter << ",NaN,NaN" << std::endl;
-
-    tree_file_ << "Num. of trajectories per tree," << avg_all_trajectories_generated << "," << stddev_all_trajectories_generated << ",NaN,NaN" << std::endl;
-
-    tree_file_ << "Num. of nodes ADDED per tree," << avg_nodes_added << "," <<  stddev_nodes_added << ",NaN,NaN" <<  std::endl;
-
-    tree_file_ << "Num. of nodes REJECTED per tree," << avg_nodes_rejected << "," << stddev_nodes_rejected << ",NaN,NaN" << std::endl;
-
-    tree_file_ << "Num. of nodes PROCESSED per tree," << avg_num_nodes_processed << "," << stddev_num_nodes_processed << ",NaN,NaN" << std::endl;
-
-    tree_file_ << "Max depth of tree," << avg_depth << "," << stddev_depth << ",NaN,NaN" << std::endl;
-
-    tree_file_ << "Min cost," << avg_mincost << "," << stddev_mincost << ",NaN," << max_mincost << std::endl;
-
-    if (w_goal_ != 0)
-    {
-      tree_file_ << "Dist to goal," << avg_dist_to_goal << "," << stddev_dist_to_goal <<",NaN," << max_dist_to_goal << std::endl;
-    }
-
-    tree_file_ << "Jerk integral," << avg_jerk << "," << stddev_jerk <<",NaN," << max_jerk << std::endl;
-
-    tree_file_.close();
-  }
-
-  std::cout << "======================================" << std::endl;
-
-
 }
 
 
@@ -272,25 +189,6 @@ void MotionPrimitiveListTree::initialize(const ros::NodeHandle& n,
 void MotionPrimitiveListTree::setUpFileWriting(const std::string& saveto_directory)
 {
   record_ = true;
-
-  // tree file
-  std::string tree_filename = saveto_directory + std::string("/tree.csv");
-  tree_file_.open(tree_filename.c_str());
-
-  // Record all trajectories generated
-  std::string pos_filename = saveto_directory + std::string("/all_pos.csv");
-  pos_file_.open(pos_filename.c_str());
-
-  std::string vel_filename = saveto_directory + std::string("/all_vel.csv");
-  vel_file_.open(vel_filename.c_str());
-
-  std::string acc_filename = saveto_directory + std::string("/all_acc.csv");
-  acc_file_.open(acc_filename.c_str());
-
-  std::string jerk_filename = saveto_directory + std::string("/all_jerk.csv");
-  jerk_file_.open(jerk_filename.c_str());
-
-  collision_checker_->setUpFileWriting(saveto_directory);
 }
 
 
@@ -730,12 +628,6 @@ MotionPrimitiveListTree::Trajectory MotionPrimitiveListTree::getMinCostTrajector
     dist_to_goal_.push_back(dist);
   };
 
-  // Write the min cost trajectory to file
-  if (record_)
-  {
-    WriteAllTrajToFile(traj);
-  }
-
   // Compute and save the jerk integral along the trajectory.
   float dt = 0.01;
   auto path = forward_arc_primitive_trajectory::samplePath(traj, dt);
@@ -792,56 +684,5 @@ void MotionPrimitiveListTree::printReverseTreeBranch(const std::vector<Branch>& 
   std::cout << " root "<< std::endl;
 }
 
-void MotionPrimitiveListTree::WriteAllTrajToFile(const std::vector<Trajectory>& trajectories)
-{
-  for (auto & traj : trajectories)
-  {
-    WriteAllTrajToFile(traj);
-  }
-
-  return;
-}
-
-void MotionPrimitiveListTree::WriteAllTrajToFile(const Trajectory& traj)
-{
-  // compute each vector and write it to file
-  float dt = 0.01;
-  auto path = forward_arc_primitive_trajectory::samplePath(traj, dt);
-
-  std::vector<float> X, Y, Z, vel, acc, jerk;
-  X.reserve(path.size());
-  Y.reserve(path.size());
-  Z.reserve(path.size());
-
-  for (auto & wpt : path)
-  {
-    X.push_back(wpt.pos(0));
-    Y.push_back(wpt.pos(1));
-    Z.push_back(wpt.pos(2));
-    vel_file_ << wpt.acc.norm() << ",";
-    acc_file_ << wpt.acc.norm() << ",";
-    jerk_file_ << wpt.jerk.norm() << ",";
-  }
-  vel_file_ << std::endl;
-  acc_file_ << std::endl;
-  jerk_file_ << std::endl;
-
-  for (float x : X) {
-    pos_file_ << x << ",";
-  }
-  pos_file_<< std::endl;
-
-  for (float y : Y) {
-    pos_file_ << y << ",";
-  }
-  pos_file_<< std::endl;
-
-  for (float z : Z) {
-    pos_file_ << z << ",";
-  }
-  pos_file_<< std::endl;
-
-  return;
-}
 
 }; // namespace planner

@@ -22,7 +22,6 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 #include <queue>
 #include <stdexcept>
 
-#include <codetimer_catkin/codetimer.h>
 
 namespace cost = planner::cost_function;
 namespace stats = stats_utils;
@@ -43,11 +42,8 @@ std::vector<int> MotionPrimitiveListTree::createAndSampleEliteSampleSet(const st
   std::deque<float> cost_sorted;
   std::vector<size_t> idx_sorted;
 
-  auto t_sort = Clock::now();
   vu::Sort(cost, &cost_sorted, &idx_sorted);
-  CodeTimer::record("[ListTree::sampleFromEliteSampleSet] sort", t_sort);
 
-  auto t_eliteset = Clock::now();
   std::vector<float> cost_eliteset;
   std::vector<int> idx_eliteset;
   cost_eliteset.reserve(K);
@@ -59,7 +55,6 @@ std::vector<int> MotionPrimitiveListTree::createAndSampleEliteSampleSet(const st
     if (softmax_enabled_) v = std::exp(beta_*v);
     cost_eliteset.push_back(v);
   }
-  CodeTimer::record("[ListTree::sampleFromEliteSampleSet] elite set", t_eliteset);
 
   // Invert and sample from the elite set.
 
@@ -78,8 +73,6 @@ std::vector<MotionPrimitiveListTree::Branch> MotionPrimitiveListTree::createAndS
 {
   int K = std::min(elite_set_size, (int)sample_set.size());
 
-  auto t_eliteset = Clock::now();
-
   //Define a minpq parameter
   auto mincost_comparator_ = [](Branch left, Branch right)
     { return std::get<3>(left) > std::get<3>(right); };
@@ -93,10 +86,8 @@ std::vector<MotionPrimitiveListTree::Branch> MotionPrimitiveListTree::createAndS
   {
     sample_set_minq.push(node);
   }
-  CodeTimer::record("[ListTree::sampleFromEliteSampleSet] creating minpq", t_eliteset);
 
   // Get the K smallest value from it
-  auto t_pop = Clock::now();
   std::vector<Branch> eliteset;
   std::vector<float> cost_eliteset;
   eliteset.reserve(K);
@@ -108,10 +99,6 @@ std::vector<MotionPrimitiveListTree::Branch> MotionPrimitiveListTree::createAndS
     sample_set_minq.pop();
     cost_eliteset.push_back(std::get<3>(node));
   }
-  CodeTimer::record("[ListTree::sampleFromEliteSampleSet] pop from minpq", t_pop);
-
-  CodeTimer::record("[ListTree::sampleFromEliteSampleSet] elite set", t_eliteset);
-
   std::vector<int> sampled_node_indices_from_vector = sampleFromEliteSampleSet(cost_eliteset, sample_batch_size);
 
   std::vector<Branch> sampled_nodes;
@@ -127,21 +114,15 @@ std::vector<int> MotionPrimitiveListTree::sampleFromEliteSampleSet(const std::ve
 {
   // Invert and sample from the elite set.
 
-  auto t_invert = Clock::now();
   std::vector<float> value;
   vu::Invert(cost_eliteset, &value);
-  CodeTimer::record("[ListTree::sampleFromEliteSampleSet] invert", t_invert);
 
-  auto t_norm = Clock::now();
   std::vector<float> normalized_value;
   vu::Normalize(value, &normalized_value);
-  CodeTimer::record("[ListTree::sampleFromEliteSampleSet] normalize", t_norm);
 
-  auto t_sample = Clock::now();
   std::vector<int> sampled_node_indices_from_vector =
     su::DiscreteSampleWithoutReplacement<float>(normalized_value,   sample_batch_size, generator_);
 
-  CodeTimer::record("[ListTree::sampleFromEliteSampleSet] sample", t_sample);
 
   return sampled_node_indices_from_vector;
 }
@@ -151,21 +132,14 @@ std::deque<int> MotionPrimitiveListTree::sampleFromEliteSampleSet(const std::deq
 {
   // Invert and sample from the elite set.
 
-  auto t_invert = Clock::now();
   std::deque<float> value;
   vu::Invert(cost_eliteset, &value);
-  CodeTimer::record("[ListTree::sampleFromEliteSampleSet] invert", t_invert);
 
-  auto t_norm = Clock::now();
   std::deque<float> normalized_value;
   vu::Normalize(value, &normalized_value);
-  CodeTimer::record("[ListTree::sampleFromEliteSampleSet] normalize", t_norm);
 
-  auto t_sample = Clock::now();
   std::deque<int> sampled_node_indices_from_vector =
     su::DiscreteSampleWithoutReplacement<float>(normalized_value,   sample_batch_size, generator_);
-
-  CodeTimer::record("[ListTree::sampleFromEliteSampleSet] sample", t_sample);
 
   return sampled_node_indices_from_vector;
 }
@@ -206,7 +180,6 @@ bool MotionPrimitiveListTree::biasedTree(const FlatState& ref_state, const Eigen
   std::atomic<int> not_added = 0;
   int iter = 0;
   while (true) {
-    auto t_start = Clock::now();
     iter++;
 
     // Check if we're stuck
@@ -232,10 +205,8 @@ bool MotionPrimitiveListTree::biasedTree(const FlatState& ref_state, const Eigen
 
     int K = std::min(elite_set_size_, (int)sample_set_.size());
 
-    auto t_eliteset = Clock::now();
 
     // Get the K smallest value from it
-    auto t_pop = Clock::now();
     std::vector<Branch> eliteset;
     std::vector<float> cost_eliteset;
     eliteset.reserve(K);
@@ -247,7 +218,6 @@ bool MotionPrimitiveListTree::biasedTree(const FlatState& ref_state, const Eigen
       sample_set_minq.pop();
       cost_eliteset.push_back(std::get<3>(node));
     }
-    CodeTimer::record("[ListTree::sampleFromEliteSampleSet] pop from minpq", t_pop);
 
     std::vector<int> sampled_indices = sampleFromEliteSampleSet(cost_eliteset, sample_batch_size_);
 
@@ -262,9 +232,6 @@ bool MotionPrimitiveListTree::biasedTree(const FlatState& ref_state, const Eigen
       else sample_set_minq.push(eliteset[i]);
     }
 
-    CodeTimer::record("[ListTree::sampleFromEliteSampleSet] elite set", t_eliteset);
-
-    // ========================== end elite sample set ===============
 
     // for (int sampled_node_idx : sampled_node_indices) {
     //
@@ -295,7 +262,6 @@ bool MotionPrimitiveListTree::biasedTree(const FlatState& ref_state, const Eigen
 
       // For each static library, check for safety, and then evaluate safety.
       // Add the nodes to the Sample Set
-      auto t_children = Clock::now();
       std::atomic<int> num_unsafe = 0;
 
       /******************     BEGIN MULTITHREADING        *********************/
@@ -306,7 +272,6 @@ bool MotionPrimitiveListTree::biasedTree(const FlatState& ref_state, const Eigen
       auto thread_f = [this, sequence, trajectory, &sample_set_minq, parent_node_idx, &num_unsafe, &added, &not_added, parent_end_state, &num_processed, input, ref_state, cost_bound, &write_lock, &input_vector](int offset) mutable {
       for (size_t i = offset; i < static_library_.size(); i += num_threads_) {
 
-        auto t_eachprimitive = Clock::now();
 
         // Make new node
         Branch new_node(parent_node_idx, i, std::get<2>(tree_[parent_node_idx])+1, 0.0);
@@ -325,16 +290,13 @@ bool MotionPrimitiveListTree::biasedTree(const FlatState& ref_state, const Eigen
         // Check for safety (prune)
 
         bool safe = true;
-        auto t_safety = Clock::now();
         safe = collision_checker_->checkTrajectorySafe(&primitive);
-        CodeTimer::record("[ListTree] checkTrajectorySafe", t_safety);
 
         num_processed++;
 
         // if it's not safe or already in tree, continue the expansion.
         if (!safe) {
           num_unsafe++;
-          CodeTimer::record("[ListTree] process one child - unsafe", t_eachprimitive);
           continue;
         }
 
@@ -347,74 +309,53 @@ bool MotionPrimitiveListTree::biasedTree(const FlatState& ref_state, const Eigen
         trajectory[sequence.size() - 1] = primitive;
 
         // compute Cost
-        auto t_cost = Clock::now();
         float cost = 0;
 
         float c_sl = 0, c_duration = 0, c_speed = 0, c_smooth = 0, c_goal = 0, c_point = 0, c_direction = 0, c_input = 0, c_length = 0, c_deviation = 0;
 
         if (w_sl_ != 0) {
-          auto t_sl = Clock::now();
           c_sl =  cost::StraightLine(trajectory);
-          CodeTimer::record("[ListTree::cost] StraightLine", t_sl);
         }
 
         if (w_smooth_ != 0) {
-          auto t_smooth = Clock::now();
           c_smooth = cost::Smoothness(trajectory);
-          CodeTimer::record("[ListTree::cost] Smoothness", t_smooth);
         }
 
         if (w_direction_ != 0) {
-          auto t_dev = Clock::now();
           c_direction = cost::Direction(trajectory, ref_state);
-          CodeTimer::record("[ListTree::cost] Direction", t_dev);
         }
 
         if (w_input_ != 0) {
-          auto t_dir = Clock::now();
           // c_input = cost::Input(trajectory, input);
           // c_input = cost::Input(trajectory, input, max_duration_);
           c_input = cost::Input2(trajectory, input_vector);
-          CodeTimer::record("[ListTree::cost] Input", t_dir);
         }
 
         // trajectory length characteristics
         if (w_duration_ != 0) {
-          auto t_dur = Clock::now();
           c_duration = cost::Duration(trajectory);
-          CodeTimer::record("[ListTree::cost] Duration", t_dur);
         }
 
         if (w_speed_ != 0) {
-          auto t_speed = Clock::now();
           c_speed = cost::Speed(trajectory);
-          CodeTimer::record("[ListTree::cost] Speed", t_speed);
         }
 
         if (w_length_ != 0) {
-          auto t_length = Clock::now();
           c_length = cost::Length(trajectory);
-          CodeTimer::record("[ListTree::cost] Length", t_length);
         }
 
         // state-space costs
 
         if (w_goal_ != 0) {
-          auto t_goal = Clock::now();
           c_goal = cost::Goal(trajectory, goal_);
-          CodeTimer::record("[ListTree::cost] goal", t_goal);
         }
 
         if (w_point_ != 0) {
-          auto t_point = Clock::now();
           c_point = cost::Point(trajectory, goal_, 48);
-          CodeTimer::record("[ListTree::cost] point", t_point);
         }
 
         if (w_deviation_ != 0) {
-          auto t_deviation = Clock::now();
           c_deviation = cost::Deviation(trajectory);
-          CodeTimer::record("[ListTree::cost] deviation", t_deviation);
         }
 
         cost = w_speed_*c_speed + w_duration_*c_duration
@@ -423,11 +364,8 @@ bool MotionPrimitiveListTree::biasedTree(const FlatState& ref_state, const Eigen
              + w_direction_*c_direction + w_input_*c_input
              + w_goal_*c_goal + w_point_*c_point + w_deviation_ * c_deviation;
 
-        CodeTimer::record("[ListTree::cost] total", t_cost);
-
         if (cost_bound_enabled_ && cost > cost_bound) {
           not_added++;
-          CodeTimer::record("[ListTree] process one child - cost computed, not added", t_eachprimitive);
           continue;
         }
 
@@ -446,7 +384,6 @@ bool MotionPrimitiveListTree::biasedTree(const FlatState& ref_state, const Eigen
 
         // Re-adjust the max cost
 
-        CodeTimer::record("[ListTree] process one child - added", t_eachprimitive);
 
       } // End all new samples.
 
@@ -462,8 +399,6 @@ bool MotionPrimitiveListTree::biasedTree(const FlatState& ref_state, const Eigen
       }
 
       /******************     END MULTITHREADING        *********************/
-
-      CodeTimer::record("[ListTree] process all children", t_children);
 
       // If the number of unsafe elements are the same as the child size, don't add this element.
       if (num_unsafe == static_library_.size())
@@ -492,7 +427,6 @@ bool MotionPrimitiveListTree::biasedTree(const FlatState& ref_state, const Eigen
       // cost_bound = max_cost;
 
       // Method 2: Set max cost. Cheaper
-      auto t_max = Clock::now();
       // max_cost = vu::Max(cost_); // Method 1
       ///// Method 2
       auto maxcost_comparator_ = [](Branch left, Branch right)
@@ -500,7 +434,6 @@ bool MotionPrimitiveListTree::biasedTree(const FlatState& ref_state, const Eigen
       Branch max_cost_node = *std::max_element(sample_set_.begin(), sample_set_.end(), maxcost_comparator_);
       float max_cost = std::get<3>(max_cost_node);
       cost_bound = percentile_ * max_cost;
-      CodeTimer::record("[ListTree] vu::Max", t_max);
     }
 
     /* 5. TERMINATING CONDITION: what should this be? TODO */
@@ -509,7 +442,6 @@ bool MotionPrimitiveListTree::biasedTree(const FlatState& ref_state, const Eigen
       break;
     }
 
-    CodeTimer::record("[ListTree] per iter", t_start);
 
   } // end one iteration
 
